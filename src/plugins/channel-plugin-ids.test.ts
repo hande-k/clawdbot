@@ -65,6 +65,15 @@ function createManifestRegistryFixture() {
         providers: [],
         cliBackends: [],
       },
+      {
+        id: "memory-custom",
+        channels: [],
+        origin: "bundled",
+        enabledByDefault: undefined,
+        kind: "memory",
+        providers: [],
+        cliBackends: [],
+      },
     ],
     diagnostics: [],
   };
@@ -216,8 +225,22 @@ describe("resolveGatewayStartupPluginIds", () => {
       }),
       ["demo-channel", "demo-other-channel", "browser"],
     ],
+    [
+      "includes explicitly enabled memory-kind plugins in startup scope",
+      createStartupConfig({
+        enabledPluginIds: ["memory-custom"],
+      }),
+      ["demo-channel", "browser", "memory-custom"],
+    ],
   ] as const)("%s", (_name, config, expected) => {
     expectStartupPluginIdsCase({ config, expected });
+  });
+
+  it("excludes memory-kind plugins that are not explicitly enabled", () => {
+    expectStartupPluginIdsCase({
+      config: createStartupConfig({}),
+      expected: ["demo-channel", "browser"],
+    });
   });
 
   it("keeps effective-only bundled sidecars behind restrictive allowlists", () => {

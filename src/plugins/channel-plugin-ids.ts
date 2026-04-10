@@ -105,24 +105,24 @@ export function resolveGatewayStartupPluginIds(params: {
       if (plugin.channels.some((channelId) => configuredChannelIds.has(channelId))) {
         return true;
       }
-      if (!isGatewayStartupSidecar(plugin)) {
-        return false;
+      if (hasRuntimeContractSurface(plugin) || isGatewayStartupSidecar(plugin)) {
+        const activationState = resolveEffectivePluginActivationState({
+          id: plugin.id,
+          origin: plugin.origin,
+          config: pluginsConfig,
+          rootConfig: params.config,
+          enabledByDefault: plugin.enabledByDefault,
+          activationSource,
+        });
+        if (!activationState.enabled) {
+          return false;
+        }
+        if (plugin.origin !== "bundled") {
+          return activationState.explicitlyEnabled;
+        }
+        return activationState.source === "explicit" || activationState.source === "default";
       }
-      const activationState = resolveEffectivePluginActivationState({
-        id: plugin.id,
-        origin: plugin.origin,
-        config: pluginsConfig,
-        rootConfig: params.config,
-        enabledByDefault: plugin.enabledByDefault,
-        activationSource,
-      });
-      if (!activationState.enabled) {
-        return false;
-      }
-      if (plugin.origin !== "bundled") {
-        return activationState.explicitlyEnabled;
-      }
-      return activationState.source === "explicit" || activationState.source === "default";
+      return false;
     })
     .map((plugin) => plugin.id);
 }
